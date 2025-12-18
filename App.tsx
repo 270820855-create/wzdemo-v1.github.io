@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, EyeOff, ChevronUp, ChevronDown, Sun, Moon } from 'lucide-react';
+import { Plus, EyeOff, ChevronUp, ChevronDown, Sun, Moon, Loader2, PencilLine } from 'lucide-react';
 import Pet from './components/Pet';
 import SearchBar from './components/SearchBar';
 import DoodleCard from './components/DoodleCard';
@@ -21,8 +21,125 @@ import { usePetSystem } from './hooks/usePetSystem';
 // 升级版本号以强制加载包含全部最新标签的完整列表
 const DATA_VERSION = '3.7';
 
+const LoadingScreen: React.FC = () => {
+  const [progress, setProgress] = useState(0);
+  const [cnText, setCnText] = useState('次元同步中...');
+  const [jpText, setJpText] = useState('次元を同期中...');
+  const [glitchActive, setGlitchActive] = useState(false);
+
+  useEffect(() => {
+    const phases = [
+      { cn: '正在载入现实...', jp: '現実を読み込み中...' },
+      { cn: '校准次元生物...', jp: '次元生命体を同期中...' },
+      { cn: '展开时空界面...', jp: '時空インターフェース展開...' },
+      { cn: '建立传输链接...', jp: '転送リンク確立中...' },
+      { cn: '欢迎来到无名次元', jp: '未知の次元へようこそ' }
+    ];
+    
+    let phaseIdx = 0;
+    const phaseInterval = setInterval(() => {
+      phaseIdx = (phaseIdx + 1) % phases.length;
+      setCnText(phases[phaseIdx].cn);
+      setJpText(phases[phaseIdx].jp);
+      setGlitchActive(true);
+      setTimeout(() => setGlitchActive(false), 200);
+    }, 600);
+
+    const progInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) return 100;
+        // 模拟不稳定的加载进度
+        const inc = Math.random() > 0.8 ? Math.random() * 20 : Math.random() * 8;
+        return Math.min(100, prev + inc);
+      });
+    }, 150);
+
+    return () => {
+      clearInterval(phaseInterval);
+      clearInterval(progInterval);
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-[#F8F9FA] flex flex-col items-center justify-center p-8 bg-scribble overflow-hidden">
+      {/* 背景装饰：大号次元水印 */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-[0.02] scale-150 rotate-12">
+        <span className="font-anime text-[40vw] font-black text-black">次元</span>
+      </div>
+
+      {/* 中心静态Logo：按照网站Logo样式表示，保持静态不动 */}
+      <div className="relative mb-16">
+        <div className="w-44 h-44 border-[6px] border-black flex items-center justify-center bg-white shadow-[12px_12px_0_#CCFF00] relative z-10">
+           <svg viewBox="0 0 64 64" fill="currentColor" className="w-28 h-28 text-[#4A493E]">
+              <path d="M32 8C32 21.25 42.75 32 56 32C42.75 32 32 42.75 32 56C32 42.75 21.25 32 8 32C21.25 32 32 21.25 32 8Z" />
+              <circle cx="16" cy="48" r="4" />
+              <path d="M48 12V24M42 18H54" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+           </svg>
+           
+           {/* 只有在全局文本切换时会有短暂的色彩故障叠加效果，Logo本身位置保持不动 */}
+           {glitchActive && (
+             <>
+               <div className="absolute inset-0 bg-jinx-pink opacity-10 translate-x-1 mix-blend-multiply"></div>
+               <div className="absolute inset-0 bg-jinx-blue opacity-10 -translate-x-1 mix-blend-screen"></div>
+             </>
+           )}
+        </div>
+        
+        {/* 已移除右下角的版本号标签 */}
+        
+        {/* 侧边日文字符装饰 */}
+        <div className="absolute -left-12 top-0 font-anime text-4xl font-black text-black/5 vertical-text">
+          シゲン
+        </div>
+      </div>
+      
+      {/* 文本信息：中文和日语 */}
+      <div className="w-full max-w-lg relative z-10">
+        <div className={`flex flex-col items-center mb-6 transition-all ${glitchActive ? 'animate-cyber-glitch-text' : ''}`}>
+          <span className="font-anime font-black text-4xl tracking-tighter text-black mb-1">
+            {cnText}
+          </span>
+          <span className="font-pixel text-[12px] text-jinx-pink font-bold tracking-widest bg-black px-4 py-1 transform -skew-x-12">
+            {jpText}
+          </span>
+        </div>
+
+        <div className="relative group">
+          {/* 进度条 */}
+          <div className="h-10 w-full border-[4px] border-black p-1 bg-white shadow-[8px_8px_0_#000]">
+            <div 
+              className={`h-full transition-all duration-300 ease-out relative overflow-hidden ${glitchActive ? 'bg-jinx-pink' : 'bg-neon-green'}`}
+              style={{ width: `${progress}%` }}
+            >
+              <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 15px, rgba(0,0,0,0.2) 15px, rgba(0,0,0,0.2) 30px)' }} />
+            </div>
+          </div>
+          
+          {/* 进度百分比 */}
+          <div className="absolute -bottom-6 left-0 w-full flex justify-between font-pixel text-[10px] font-bold text-gray-500">
+             <span>SYS_INIT</span>
+             <span>{Math.floor(progress)}%</span>
+             <span>SYNC_OK</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* 页脚装饰 */}
+      <div className="mt-24 flex flex-col items-center gap-2 opacity-50">
+         <div className="flex gap-2">
+           {[...Array(8)].map((_, i) => (
+             <div key={i} className={`w-3 h-3 border-2 border-black ${i < (progress/12.5) ? 'bg-black' : 'bg-transparent'} ${glitchActive ? 'animate-pulse' : ''}`}></div>
+           ))}
+         </div>
+         <span className="font-pixel text-[8px] tracking-[0.4em] mt-2">次元通信 // SYNCING REALITY</span>
+      </div>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   const { t } = useLanguage();
+  const [isLoading, setIsLoading] = useState(true);
   
   const [links, setLinks] = useState<NavLink[]>(() => {
     const savedVersion = localStorage.getItem('doodle-data-version');
@@ -72,7 +189,7 @@ const App: React.FC = () => {
     return saved !== null ? JSON.parse(saved) : true;
   });
 
-  const { stats, feed, play, heal } = usePetSystem(setPetMood);
+  const { stats, feed, play, heal } = usePetSystem(setMood => setPetMood(setMood));
 
   const [petScale, setPetScale] = useState<number>(() => {
     const saved = localStorage.getItem('doodle-pet-scale');
@@ -86,6 +203,14 @@ const App: React.FC = () => {
 
   const [isImmersive, setIsImmersive] = useState(false);
   const [isNightMode, setIsNightMode] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      playSfx('success');
+    }, 3500); 
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('doodle-data-version', DATA_VERSION);
@@ -216,7 +341,7 @@ const App: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
-  // 排序逻辑：将优秀的（isFavorite）排在最前面
+  // 排序逻辑：将喜欢的（isFavorite）排在最前面
   const sortedLinks = [...filteredLinks].sort((a, b) => {
     if (a.isFavorite && !b.isFavorite) return -1;
     if (!a.isFavorite && b.isFavorite) return 1;
@@ -227,11 +352,13 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col font-anime text-gray-800 bg-transparent overflow-hidden relative">
+      {isLoading && <LoadingScreen />}
+      
       {isCursorEnabled && <VirtualCursor petSkin={currentPetId} />}
 
       <MeteorBackground darkMode={isNightMode} speedMultiplier={meteorSpeed} />
 
-      <div className={`flex flex-col h-full w-full z-10 transition-all duration-500 ease-in-out ${isImmersive ? 'opacity-0 scale-105 pointer-events-none blur-sm' : 'opacity-100 scale-100'}`}>
+      <div className={`flex flex-col h-full w-full z-10 transition-all duration-500 ease-in-out ${isImmersive || isLoading ? 'opacity-0 scale-105 pointer-events-none blur-sm' : 'opacity-100 scale-100'}`}>
         <Header 
           onOpenSettings={() => { setIsSettingsOpen(true); playSfx('open'); }} 
           onToggleMenu={() => { setIsMobileMenuOpen(true); playSfx('scribble'); }}
@@ -428,10 +555,10 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {isPetVisible && !isImmersive && (
+      {isPetVisible && !isImmersive && !isLoading && (
         <Pet 
           mood={petMood} 
-          setMood={setPetMood} 
+          setMood={setMood => setPetMood(setMood)} 
           skinId={currentPetId} 
           scale={petScale} 
           stats={stats}
