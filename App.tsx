@@ -19,7 +19,7 @@ import { useLanguage } from './contexts/LanguageContext';
 import { usePetSystem } from './hooks/usePetSystem';
 
 // 升级版本号以强制加载包含全部最新标签的完整列表
-const DATA_VERSION = '3.7';
+const DATA_VERSION = '3.8';
 
 const LoadingScreen: React.FC = () => {
   const [progress, setProgress] = useState(0);
@@ -48,7 +48,6 @@ const LoadingScreen: React.FC = () => {
     const progInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) return 100;
-        // 模拟不稳定的加载进度
         const inc = Math.random() > 0.8 ? Math.random() * 20 : Math.random() * 8;
         return Math.min(100, prev + inc);
       });
@@ -67,25 +66,32 @@ const LoadingScreen: React.FC = () => {
         <span className="font-anime text-[40vw] font-black text-black">次元</span>
       </div>
 
-      {/* 中心静态Logo：按照网站Logo样式表示，保持静态不动 */}
+      {/* 中心Logo单元：强化整体故障效果 */}
       <div className="relative mb-16">
-        <div className="w-44 h-44 border-[6px] border-black flex items-center justify-center bg-white shadow-[12px_12px_0_#CCFF00] relative z-10">
-           <svg viewBox="0 0 64 64" fill="currentColor" className="w-28 h-28 text-[#4A493E]">
-              <path d="M32 8C32 21.25 42.75 32 56 32C42.75 32 32 42.75 32 56C32 42.75 21.25 32 8 32C21.25 32 32 21.25 32 8Z" />
-              <circle cx="16" cy="48" r="4" />
-              <path d="M48 12V24M42 18H54" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-           </svg>
+        <div className={`
+          w-44 h-44 border-[6px] border-black flex items-center justify-center bg-white shadow-[12px_12px_0_#CCFF00] relative z-10 overflow-hidden
+          transition-transform duration-75
+          ${glitchActive ? 'animate-cyber-glitch' : ''}
+        `}>
+           {/* Logo内部图案：保持白色不透明度 */}
+           <div className="relative z-10 w-28 h-28">
+             <svg viewBox="0 0 64 64" fill="currentColor" className="w-full h-full text-[#4A493E]">
+                <path d="M32 8C32 21.25 42.75 32 56 32C42.75 32 32 42.75 32 56C32 42.75 21.25 32 8 32C21.25 32 32 21.25 32 8Z" />
+                <circle cx="16" cy="48" r="4" />
+                <path d="M48 12V24M42 18H54" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+             </svg>
+           </div>
            
-           {/* 只有在全局文本切换时会有短暂的色彩故障叠加效果，Logo本身位置保持不动 */}
+           {/* 故障层：叠加在内部图案之上但由于背景是白色，内部白色依然会被保持 */}
            {glitchActive && (
-             <>
-               <div className="absolute inset-0 bg-jinx-pink opacity-10 translate-x-1 mix-blend-multiply"></div>
-               <div className="absolute inset-0 bg-jinx-blue opacity-10 -translate-x-1 mix-blend-screen"></div>
-             </>
+             <div className="absolute inset-0 z-0 flex items-center justify-center">
+               <div className="absolute inset-0 bg-jinx-pink mix-blend-multiply opacity-20 animate-pulse"></div>
+               <div className="absolute inset-0 bg-jinx-blue mix-blend-screen opacity-20 animate-wiggle"></div>
+               {/* 扫描线效果 */}
+               <div className="absolute inset-0 pointer-events-none" style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)' }}></div>
+             </div>
            )}
         </div>
-        
-        {/* 已移除右下角的版本号标签 */}
         
         {/* 侧边日文字符装饰 */}
         <div className="absolute -left-12 top-0 font-anime text-4xl font-black text-black/5 vertical-text">
@@ -93,7 +99,7 @@ const LoadingScreen: React.FC = () => {
         </div>
       </div>
       
-      {/* 文本信息：中文和日语 */}
+      {/* 文本信息 */}
       <div className="w-full max-w-lg relative z-10">
         <div className={`flex flex-col items-center mb-6 transition-all ${glitchActive ? 'animate-cyber-glitch-text' : ''}`}>
           <span className="font-anime font-black text-4xl tracking-tighter text-black mb-1">
@@ -144,7 +150,6 @@ const App: React.FC = () => {
   const [links, setLinks] = useState<NavLink[]>(() => {
     const savedVersion = localStorage.getItem('doodle-data-version');
     const savedLinks = localStorage.getItem('doodle-links');
-    // 如果版本不匹配，重置为最新的 DEFAULT_LINKS
     if (savedVersion !== DATA_VERSION) return DEFAULT_LINKS;
     return savedLinks ? JSON.parse(savedLinks) : DEFAULT_LINKS;
   });
@@ -341,7 +346,6 @@ const App: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
-  // 排序逻辑：将喜欢的（isFavorite）排在最前面
   const sortedLinks = [...filteredLinks].sort((a, b) => {
     if (a.isFavorite && !b.isFavorite) return -1;
     if (!a.isFavorite && b.isFavorite) return 1;
@@ -427,11 +431,6 @@ const App: React.FC = () => {
                       `}>
                           {activeCategory === 'ALL' ? 'ダッシュボード' : activeCategory === 'COLLECTION' ? 'お気に入り' : 'カテゴリー'}
                       </span>
-                      <div className={`
-                          absolute bottom-0 left-1/2 -translate-x-1/2 w-[120%] h-4 bg-transparent -z-0 -rotate-2
-                          transition-opacity duration-100
-                          ${isHeaderGlitching ? 'opacity-0' : 'opacity-100'}
-                      `}></div>
                   </div>
                   
                   <div className={`flex items-center gap-3 mt-4 transition-opacity duration-100 ${isHeaderGlitching ? 'opacity-0' : 'opacity-100'}`}>
